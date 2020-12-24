@@ -67,7 +67,9 @@ func CreatePartner(c *gin.Context) {
 	}
 	//fmt.Println("Partner Domain ",partner_domain)
 	//c.String(http.StatusNotImplemented, "Implement Me!")
-	c.JSON(http.StatusCreated, result)
+	//c.JSON(http.StatusCreated, result)
+	c.JSON(http.StatusCreated, result.Marshall(c.GetHeader("X-Public") == "true"))
+
 
 
 }
@@ -106,7 +108,8 @@ func UpdatePartner(c *gin.Context) {
 	}
 	//fmt.Println("Partner Domain ",partner_domain)
 	//c.String(http.StatusNotImplemented, "Implement Me!")
-	c.JSON(http.StatusOK, result)
+	//c.JSON(http.StatusOK, result)
+	c.JSON(http.StatusCreated, result.Marshall(c.GetHeader("X-Public") == "true"))
 }
 func GetPartner(c *gin.Context) {
 	partner_id, idError:=getPartnerId(c.Param("partner_id"))
@@ -119,8 +122,8 @@ func GetPartner(c *gin.Context) {
 		c.JSON(get_error.Code,get_error)
 		return
 	}
-
-	c.JSON(http.StatusOK,result)
+	c.JSON(http.StatusCreated, result.Marshall(c.GetHeader("X-Public") == "true"))
+	//c.JSON(http.StatusOK,result)
 
 	//c.String(http.StatusNotImplemented, "Implement Me!")
 }
@@ -154,7 +157,10 @@ func FindByPartnerActive(c *gin.Context) {
 		c.JSON(errFindPartnerStatus.Code, errFindPartnerStatus)
 		return
 	}
-	c.JSON(http.StatusOK,statusPartners)
+
+
+
+	c.JSON(http.StatusOK,statusPartners.Marshall(c.GetHeader("X-Public") == "true"))
 }
 
 func GetAllPartners(c *gin.Context) {

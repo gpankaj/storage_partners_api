@@ -3,6 +3,7 @@ package services
 import (
 	"fmt"
 	"github.com/gpankaj/storage_partners_api/domains/partners_domains"
+	"github.com/gpankaj/storage_partners_api/utils/crypto_utils"
 	"github.com/gpankaj/storage_partners_api/utils/errors"
 	"log"
 )
@@ -16,6 +17,8 @@ func Create_Partner_Service(partner partners_domains.Partner) (*partners_domains
 	if err:= partner.Validate(false); err!=nil{
 		return nil, err
 	}
+
+	partner.Password = crypto_utils.GetMd5(partner.Password)
 
 	if err:= partner.Save(); err!= nil {
 		return nil, err
@@ -148,6 +151,6 @@ func Delete_Partner_Service(partner_id int64) *errors.RestErr {
 	return nil
 }
 
-func FindByPartnerActive(status bool)  ([]partners_domains.Partner , *errors.RestErr) {
+func FindByPartnerActive(status bool)  (partners_domains.Partners , *errors.RestErr) {
 	return partners_domains.FindByPartnerActive(status)
 }

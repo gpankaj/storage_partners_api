@@ -19,7 +19,7 @@ type Partner struct {
 	Phone_numbers 						string
 
 	Verified							bool
-	Password							string `json:"-"`
+	Password							string
 
 	Date_created 						string
 }
