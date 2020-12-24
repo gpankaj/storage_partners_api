@@ -10,7 +10,10 @@ func mapUrls(){
 
 	router.POST("/partners", partners_controller.CreatePartner);
 	router.GET("/partners/:partner_id", partners_controller.GetPartner);
-	router.DELETE("/partners", partners_controller.DeletePartner);
+	router.PUT("/partners/:partner_id", partners_controller.UpdatePartner);
+	router.PATCH("/partners/:partner_id", partners_controller.UpdatePartner);
+	router.DELETE("/partners/:partner_id", partners_controller.DeletePartner);
+
 
 	router.GET("/partners", partners_controller.GetAllPartners);
 

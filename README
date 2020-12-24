@@ -1,0 +1,2 @@
+use partners_schema;
+ALTER TABLE `partners_table` ADD UNIQUE `company_name_listing_active_unique`(`Storage_partner_company_name`, `Listing_active`);

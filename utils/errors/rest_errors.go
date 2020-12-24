@@ -25,3 +25,20 @@ func NewNotFoundError(message string)(*RestErr) {
 		Error: "not_found",
 	}
 }
+
+
+func NewInternalServerError(message string) (*RestErr){
+	return &RestErr{
+		Message: message,
+		Code: http.StatusInternalServerError,
+		Error: "internal_server_error",
+	}
+}
+
+func NewUniqueContraintViolationcompany_name_listing_active_uniqueError(message string) (*RestErr) {
+	return &RestErr{
+		Message: message,
+		Code: http.StatusBadRequest,
+		Error: "bad_request",
+	}
+}
