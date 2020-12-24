@@ -12,17 +12,22 @@ const  (
 	noRowInResultSet = "no rows in result set"
 	queryInsertPartner = "INSERT INTO partners_table(Storage_partner_name,Storage_partner_company_name," +
 		"Storage_partner_company_gst, Provides_goods_transport_service,Provides_goods_packaging_service," +
-		"Provides_goods_insurance_service,Listing_active,Phone_numbers,Email_id,Date_created) VALUES(?,?,?,?,?,?,?,?,?,?);"
+		"Provides_goods_insurance_service,Listing_active,Phone_numbers,Email_id,Date_created, Password) VALUES(?,?,?,?,?,?,?,?,?,?,?);"
 
 	queryGetPartner = "SELECT Id, Storage_partner_name,Storage_partner_company_name,Storage_partner_company_gst, " +
 		"Provides_goods_transport_service,Provides_goods_packaging_service," +
-		"Provides_goods_insurance_service,Listing_active,Phone_numbers,Email_id,Date_created FROM partners_table WHERE Id=?;"
+		"Provides_goods_insurance_service,Listing_active,Phone_numbers,Email_id,Date_created,Verified FROM partners_table WHERE Id=?;"
 
 	queryUpdatePartner = "UPDATE partners_table SET Storage_partner_name=?, Storage_partner_company_name=?, Storage_partner_company_gst=?," +
 		"Provides_goods_transport_service=?, Provides_goods_packaging_service=?," +
 		"Provides_goods_insurance_service=?, Listing_active=?, Phone_numbers=?, Email_id=? WHERE Id=?;"
 
 	queryDeletePartner = "DELETE FROM partners_table WHERE id=?;"
+
+	queryFindPartnerIfActive = "SELECT Id, Storage_partner_name,Storage_partner_company_name,Storage_partner_company_gst, " +
+		"Provides_goods_transport_service,Provides_goods_packaging_service," +
+		"Provides_goods_insurance_service,Listing_active,Phone_numbers,Email_id,Date_created,Verified FROM partners_table WHERE Listing_active=? ;"
+
 )
 
 func (partner *Partner)  Get() (*errors.RestErr){
@@ -42,7 +47,9 @@ func (partner *Partner)  Get() (*errors.RestErr){
 	result := stmt.QueryRow(partner.Id)
 	if getErr:= result.Scan(&partner.Id,&partner.Storage_partner_name, &partner.Storage_partner_company_name,
 		&partner.Storage_partner_company_gst,&partner.Provides_goods_transport_service,&partner.Provides_goods_packaging_service,
-		&partner.Provides_goods_insurance_service,&partner.Listing_active,&partner.Phone_numbers,&partner.Email_id,&partner.Date_created); getErr!=nil{
+		&partner.Provides_goods_insurance_service,&partner.Listing_active,&partner.Phone_numbers,&partner.Email_id,&partner.Date_created,
+		&partner.Verified); getErr!=nil{
+
 		return mysql_utils.ParseError(getErr)
 	}
 	return nil
@@ -61,7 +68,7 @@ func (partner *Partner) Save() *errors.RestErr{
 	result, saveError := stmt.Exec(
 		partner.Storage_partner_name, partner.Storage_partner_company_name, partner.Storage_partner_company_gst,
 		partner.Provides_goods_transport_service, partner.Provides_goods_packaging_service, partner.Provides_goods_insurance_service,
-		partner.Listing_active, partner.Phone_numbers, partner.Email_id, partner.Date_created)
+		partner.Listing_active, partner.Phone_numbers, partner.Email_id, partner.Date_created, partner.Password)
 
 	if saveError!= nil {
 		return mysql_utils.ParseError(saveError)
@@ -112,4 +119,41 @@ func (partner *Partner)Delete() *errors.RestErr{
 		return mysql_utils.ParseError(deleteError)
 	}
 	return nil
+}
+//
+
+func FindByPartnerActive(status bool) ([]Partner, *errors.RestErr){
+	stmt ,err := partners_db.Client.Prepare(queryFindPartnerIfActive)
+
+	if err!=nil {
+		return nil,errors.NewInternalServerError(fmt.Sprintf("Error while preparing stmt in FindByPartnerActive ",err.Error()))
+	}
+	//Storage_partner_company_name
+	defer stmt.Close()
+	//partner.Date_created = date_utils.GetNowString()
+	rows, findByPartnerActiveError := stmt.Query(status)
+	if findByPartnerActiveError!= nil {
+		return nil,mysql_utils.ParseError(findByPartnerActiveError)
+	}
+
+	defer rows.Close()
+	//We do not know how many results will be there, so we make a slice of size 0 of data.
+	results := make([]Partner,0)
+
+	for rows.Next() {
+		var partner Partner
+		err:=rows.Scan(&partner.Id, &partner.Storage_partner_name, &partner.Storage_partner_company_name,
+			&partner.Storage_partner_company_gst,&partner.Provides_goods_transport_service, &partner.Provides_goods_packaging_service,
+			&partner.Provides_goods_insurance_service, &partner.Listing_active,&partner.Phone_numbers,
+			&partner.Email_id,&partner.Date_created,&partner.Verified)
+		if err!= nil{
+			return nil,mysql_utils.ParseError(findByPartnerActiveError)
+		}
+		results = append(results, partner)
+	}
+
+	if len(results) == 0 {
+		return nil, errors.NewNotFoundError(fmt.Sprintf("No matching user found for given status %t", status))
+	}
+	return results, nil
 }

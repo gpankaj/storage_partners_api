@@ -143,7 +143,11 @@ func Delete_Partner_Service(partner_id int64) *errors.RestErr {
 
 	deleteError := partner_from_db.Delete()
 	if deleteError!= nil {
-		
+
 	}
 	return nil
+}
+
+func FindByPartnerActive(status bool)  ([]partners_domains.Partner , *errors.RestErr) {
+	return partners_domains.FindByPartnerActive(status)
 }

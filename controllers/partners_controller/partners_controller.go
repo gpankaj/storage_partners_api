@@ -20,6 +20,18 @@ func getPartnerId(partnerIdParams string) (int64, *errors.RestErr) {
 	}
 	return partner_id, nil
 }
+
+func getPartnerStatus(partnerActiveParams string) (bool, *errors.RestErr) {
+	fmt.Println("Inside getPartnerStatus ",partnerActiveParams)
+	status, statusError := strconv.ParseBool(partnerActiveParams)
+	if statusError!= nil {
+		//True is the default status.
+		return true, errors.NewBadRequestError(fmt.Sprintf("Can not parse input text err: %s", statusError.Error()))
+
+	}
+	return status, nil
+}
+
 func CreatePartner(c *gin.Context) {
 	//var partner_domain partners_domains.Partner
 
@@ -46,7 +58,7 @@ func CreatePartner(c *gin.Context) {
 		c.JSON(restError.Code, restError)
 		return
 	}
-
+	fmt.Println("Password is ", partner_domain)
 	result, save_error := services.Create_Partner_Service(*partner_domain)
 	if save_error != nil {
 		//TODO: Handle user creation Error
@@ -128,6 +140,22 @@ func DeletePartner(c *gin.Context) {
 	c.JSON(http.StatusOK, map[string]string{"status": fmt.Sprintf("deleted partner with id %d", partner_id)})
 }
 
+func FindByPartnerActive(c *gin.Context) {
+	//
+	//status, statusError:=getPartnerStatus(c.Param("status"))
+	status, statusError:=getPartnerStatus(c.Query("status"))
+	log.Println("Searching for ", status)
+	if statusError!=nil{
+		c.JSON(statusError.Code,statusError)
+		return
+	}
+	statusPartners, errFindPartnerStatus:= services.FindByPartnerActive(status);
+	if errFindPartnerStatus!=nil{
+		c.JSON(errFindPartnerStatus.Code, errFindPartnerStatus)
+		return
+	}
+	c.JSON(http.StatusOK,statusPartners)
+}
 
 func GetAllPartners(c *gin.Context) {
 	c.String(http.StatusNotImplemented, "Implement Me!")
