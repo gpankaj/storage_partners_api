@@ -7,8 +7,22 @@ import (
 	"github.com/gpankaj/storage_partners_api/utils/errors"
 	"log"
 )
+var (
+	PartnerService partnerServiceInterface = &partnerService{}
+)
 
-func Create_Partner_Service(partner partners_domains.Partner) (*partners_domains.Partner, *errors.RestErr) {
+type partnerService struct {
+}
+
+type partnerServiceInterface interface {
+	Create_Partner_Service( partners_domains.Partner) (*partners_domains.Partner, *errors.RestErr)
+	Get_Partner_Service(partner_id int64) (*partners_domains.Partner, *errors.RestErr)
+	Update_Partner_Service(bool,partners_domains.Partner) (*partners_domains.Partner, *errors.RestErr)
+	Delete_Partner_Service(int64) *errors.RestErr
+	LoginUser(partners_domains.PartnerLoginRequest) (*partners_domains.Partner,*errors.RestErr)
+}
+
+func (s *partnerService) Create_Partner_Service(partner partners_domains.Partner) (*partners_domains.Partner, *errors.RestErr) {
 	/*
 	partner_model := partners_domains.Partner{}
 
@@ -29,7 +43,7 @@ func Create_Partner_Service(partner partners_domains.Partner) (*partners_domains
 
 
 
-func Get_Partner_Service(partner_id int64) (*partners_domains.Partner, *errors.RestErr) {
+func (s *partnerService) Get_Partner_Service(partner_id int64) (*partners_domains.Partner, *errors.RestErr) {
 	if partner_id <0 {
 		return nil, errors.NewBadRequestError(fmt.Sprintf("Invalid partner id %d", partner_id))
 	}
@@ -42,10 +56,10 @@ func Get_Partner_Service(partner_id int64) (*partners_domains.Partner, *errors.R
 	return partner_model, nil
 }
 
-func Update_Partner_Service(isPartial bool,partner partners_domains.Partner) (*partners_domains.Partner, *errors.RestErr) {
+func (s *partnerService) Update_Partner_Service(isPartial bool,partner partners_domains.Partner) (*partners_domains.Partner, *errors.RestErr) {
 
 	//User from DB
-	partner_from_db, err := Get_Partner_Service(partner.Id);
+	partner_from_db, err := PartnerService.Get_Partner_Service(partner.Id);
 
 
 	if err!=nil{
@@ -133,9 +147,9 @@ func Update_Partner_Service(isPartial bool,partner partners_domains.Partner) (*p
 	return nil, nil
 }
 
-func Delete_Partner_Service(partner_id int64) *errors.RestErr {
+func (s *partnerService) Delete_Partner_Service(partner_id int64) *errors.RestErr {
 	//Check if user is in DB
-	partner_from_db, err := Get_Partner_Service(partner_id);
+	partner_from_db, err := PartnerService.Get_Partner_Service(partner_id);
 	if err != nil {
 		return err
 	}
@@ -149,6 +163,18 @@ func Delete_Partner_Service(partner_id int64) *errors.RestErr {
 
 	}
 	return nil
+}
+
+func (s *partnerService) LoginUser(request partners_domains.PartnerLoginRequest) (*partners_domains.Partner,*errors.RestErr) {
+	dao := &partners_domains.Partner{
+		Email_id: request.Email_id,
+		Password: crypto_utils.GetMd5(request.Password),
+	}
+	if err:= dao.FindByEmailAndPassword(); err!= nil {
+		return nil, err
+	}
+
+	return dao, nil
 }
 
 func FindByPartnerActive(status bool)  (partners_domains.Partners , *errors.RestErr) {

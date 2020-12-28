@@ -11,6 +11,9 @@ import (
 	"strconv"
 )
 
+func TestServiceInterface() {
+
+}
 
 func getPartnerId(partnerIdParams string) (int64, *errors.RestErr) {
 	partner_id, partnerIdError := strconv.ParseInt(partnerIdParams,10,64)
@@ -59,7 +62,7 @@ func CreatePartner(c *gin.Context) {
 		return
 	}
 	fmt.Println("Password is ", partner_domain)
-	result, save_error := services.Create_Partner_Service(*partner_domain)
+	result, save_error := services.PartnerService.Create_Partner_Service(*partner_domain)
 	if save_error != nil {
 		//TODO: Handle user creation Error
 		c.JSON(save_error.Code, save_error)
@@ -100,7 +103,7 @@ func UpdatePartner(c *gin.Context) {
 	isPartial := c.Request.Method == http.MethodPatch
 
 
-	result, update_error := services.Update_Partner_Service(isPartial,*partner_domain)
+	result, update_error := services.PartnerService.Update_Partner_Service(isPartial,*partner_domain)
 	if update_error != nil {
 		//TODO: Handle user creation Error
 		c.JSON(update_error.Code, update_error)
@@ -117,7 +120,7 @@ func GetPartner(c *gin.Context) {
 		c.JSON(idError.Code,idError)
 		return
 	}
-	result, get_error := services.Get_Partner_Service(partner_id)
+	result, get_error := services.PartnerService.Get_Partner_Service(partner_id)
 	if get_error!= nil {
 		c.JSON(get_error.Code,get_error)
 		return
@@ -136,7 +139,7 @@ func DeletePartner(c *gin.Context) {
 		c.JSON(idError.Code,idError)
 		return
 	}
-	if errDelete:= services.Delete_Partner_Service(partner_id); errDelete!=nil {
+	if errDelete:= services.PartnerService.Delete_Partner_Service(partner_id); errDelete!=nil {
 		c.JSON(errDelete.Code, errDelete)
 		return
 	}
@@ -163,6 +166,26 @@ func FindByPartnerActive(c *gin.Context) {
 	c.JSON(http.StatusOK,statusPartners.Marshall(c.GetHeader("X-Public") == "true"))
 }
 
+func Login(c *gin.Context) {
+	var request partners_domains.PartnerLoginRequest
+
+	if err:= c.ShouldBindJSON(&request); err!= nil {
+		//TODO: Handle unmarshal error + request data handling error together
+
+		restError := errors.NewBadRequestError(err.Error())
+		c.JSON(restError.Code, restError)
+		return
+	}
+	partner, err := services.PartnerService.LoginUser(request)
+
+	if err!=nil {
+		c.JSON(err.Code, err)
+		return
+	}
+		c.JSON(http.StatusOK, partner.Marshall(c.GetHeader("X-Public") == "true"))
+
+	return
+}
 func GetAllPartners(c *gin.Context) {
 	c.String(http.StatusNotImplemented, "Implement Me!")
 }

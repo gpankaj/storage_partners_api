@@ -3,8 +3,10 @@ package partners_domains
 import (
 	"fmt"
 	"github.com/gpankaj/storage_partners_api/datasources/mysql/partners_db"
+	"github.com/gpankaj/storage_partners_api/logger"
 	"github.com/gpankaj/storage_partners_api/utils/errors"
 	"github.com/gpankaj/storage_partners_api/utils/mysql_utils"
+	"log"
 )
 
 const  (
@@ -27,6 +29,11 @@ const  (
 	queryFindPartnerIfActive = "SELECT Id, Storage_partner_name,Storage_partner_company_name,Storage_partner_company_gst, " +
 		"Provides_goods_transport_service,Provides_goods_packaging_service," +
 		"Provides_goods_insurance_service,Listing_active,Phone_numbers,Email_id,Date_created,Verified FROM partners_table WHERE Listing_active=? ;"
+
+	queryFindEmailAndPassword="SELECT Id, Storage_partner_name,Storage_partner_company_name,Storage_partner_company_gst," +
+		"Provides_goods_transport_service,Provides_goods_packaging_service," +
+		"Provides_goods_insurance_service,Listing_active,Phone_numbers,Email_id,Date_created,Verified " +
+		"FROM partners_table WHERE Email_id=? AND Password=?;"
 
 )
 
@@ -89,6 +96,7 @@ func (partner *Partner)Update() *errors.RestErr{
 	stmt ,err := partners_db.Client.Prepare(queryUpdatePartner)
 
 	if err!=nil {
+		logger.Error("Error while preparing statement inside Update function called by used", err)
 		return errors.NewInternalServerError(fmt.Sprintf("Error while preparing stmt ",err.Error()))
 	}
 	//Storage_partner_company_name
@@ -156,4 +164,33 @@ func FindByPartnerActive(status bool) ([]Partner, *errors.RestErr){
 		return nil, errors.NewNotFoundError(fmt.Sprintf("No matching user found for given status %t", status))
 	}
 	return results, nil
+}
+
+
+func (partner *Partner) FindByEmailAndPassword() (*errors.RestErr){
+
+	if err:=partners_db.Client.Ping(); err!= nil {
+		panic(err)
+	}
+
+	fmt.Println("Got partner id", partner.Id)
+
+	stmt,err:=partners_db.Client.Prepare(queryFindEmailAndPassword)
+	if err!=nil {
+		return errors.NewInternalServerError(fmt.Sprintf("Error while preparing stmt in FindByEmailAndPassword ",err.Error()))
+	}
+	defer stmt.Close()
+
+	result := stmt.QueryRow(partner.Email_id, partner.Password)
+	log.Println("result ", result)
+
+
+	if getErr:= result.Scan(&partner.Id,&partner.Storage_partner_name, &partner.Storage_partner_company_name,
+		&partner.Storage_partner_company_gst,&partner.Provides_goods_transport_service,&partner.Provides_goods_packaging_service,
+		&partner.Provides_goods_insurance_service,&partner.Listing_active,&partner.Phone_numbers,&partner.Email_id,&partner.Date_created,
+		&partner.Verified); getErr!=nil{
+
+		return mysql_utils.ParseError(getErr)
+	}
+	return nil
 }

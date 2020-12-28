@@ -14,7 +14,10 @@ func mapUrls(){
 	router.PATCH("/partners/:partner_id", partners_controller.UpdatePartner);
 	router.DELETE("/partners/:partner_id", partners_controller.DeletePartner);
 
+
 	router.GET("/internal/partners/search", partners_controller.FindByPartnerActive);
+
+	router.POST("/partners/login", partners_controller.Login);
 
 	router.GET("/partners", partners_controller.GetAllPartners);
 
