@@ -2,9 +2,9 @@ package services
 
 import (
 	"fmt"
+	"github.com/gpankaj/go-utils/rest_errors_package"
 	"github.com/gpankaj/storage_partners_api/domains/partners_domains"
 	"github.com/gpankaj/storage_partners_api/utils/crypto_utils"
-	"github.com/gpankaj/storage_partners_api/utils/errors"
 	"log"
 )
 var (
@@ -15,14 +15,14 @@ type partnerService struct {
 }
 
 type partnerServiceInterface interface {
-	Create_Partner_Service( partners_domains.Partner) (*partners_domains.Partner, *errors.RestErr)
-	Get_Partner_Service(partner_id int64) (*partners_domains.Partner, *errors.RestErr)
-	Update_Partner_Service(bool,partners_domains.Partner) (*partners_domains.Partner, *errors.RestErr)
-	Delete_Partner_Service(int64) *errors.RestErr
-	LoginUser(partners_domains.PartnerLoginRequest) (*partners_domains.Partner,*errors.RestErr)
+	Create_Partner_Service( partners_domains.Partner) (*partners_domains.Partner, *rest_errors_package.RestErr)
+	Get_Partner_Service(partner_id int64) (*partners_domains.Partner, *rest_errors_package.RestErr)
+	Update_Partner_Service(bool,partners_domains.Partner) (*partners_domains.Partner, *rest_errors_package.RestErr)
+	Delete_Partner_Service(int64) *rest_errors_package.RestErr
+	LoginUser(partners_domains.PartnerLoginRequest) (*partners_domains.Partner,*rest_errors_package.RestErr)
 }
 
-func (s *partnerService) Create_Partner_Service(partner partners_domains.Partner) (*partners_domains.Partner, *errors.RestErr) {
+func (s *partnerService) Create_Partner_Service(partner partners_domains.Partner) (*partners_domains.Partner, *rest_errors_package.RestErr) {
 	/*
 	partner_model := partners_domains.Partner{}
 
@@ -43,9 +43,9 @@ func (s *partnerService) Create_Partner_Service(partner partners_domains.Partner
 
 
 
-func (s *partnerService) Get_Partner_Service(partner_id int64) (*partners_domains.Partner, *errors.RestErr) {
+func (s *partnerService) Get_Partner_Service(partner_id int64) (*partners_domains.Partner, *rest_errors_package.RestErr) {
 	if partner_id <0 {
-		return nil, errors.NewBadRequestError(fmt.Sprintf("Invalid partner id %d", partner_id))
+		return nil, rest_errors_package.NewBadRequestError(fmt.Sprintf("Invalid partner id %d", partner_id))
 	}
 
 	partner_model := &partners_domains.Partner{Id: partner_id}
@@ -56,7 +56,7 @@ func (s *partnerService) Get_Partner_Service(partner_id int64) (*partners_domain
 	return partner_model, nil
 }
 
-func (s *partnerService) Update_Partner_Service(isPartial bool,partner partners_domains.Partner) (*partners_domains.Partner, *errors.RestErr) {
+func (s *partnerService) Update_Partner_Service(isPartial bool,partner partners_domains.Partner) (*partners_domains.Partner, *rest_errors_package.RestErr) {
 
 	//User from DB
 	partner_from_db, err := PartnerService.Get_Partner_Service(partner.Id);
@@ -147,7 +147,7 @@ func (s *partnerService) Update_Partner_Service(isPartial bool,partner partners_
 	return nil, nil
 }
 
-func (s *partnerService) Delete_Partner_Service(partner_id int64) *errors.RestErr {
+func (s *partnerService) Delete_Partner_Service(partner_id int64) *rest_errors_package.RestErr {
 	//Check if user is in DB
 	partner_from_db, err := PartnerService.Get_Partner_Service(partner_id);
 	if err != nil {
@@ -155,7 +155,7 @@ func (s *partnerService) Delete_Partner_Service(partner_id int64) *errors.RestEr
 	}
 
 	if partner_from_db == nil {
-		return errors.NewNotFoundError(fmt.Sprintf("No such used with id %d", partner_id ))
+		return rest_errors_package.NewNotFoundError(fmt.Sprintf("No such used with id %d", partner_id ))
 	}
 
 	deleteError := partner_from_db.Delete()
@@ -165,7 +165,7 @@ func (s *partnerService) Delete_Partner_Service(partner_id int64) *errors.RestEr
 	return nil
 }
 
-func (s *partnerService) LoginUser(request partners_domains.PartnerLoginRequest) (*partners_domains.Partner,*errors.RestErr) {
+func (s *partnerService) LoginUser(request partners_domains.PartnerLoginRequest) (*partners_domains.Partner,*rest_errors_package.RestErr) {
 	dao := &partners_domains.Partner{
 		Email_id: request.Email_id,
 		Password: crypto_utils.GetMd5(request.Password),
@@ -177,6 +177,6 @@ func (s *partnerService) LoginUser(request partners_domains.PartnerLoginRequest)
 	return dao, nil
 }
 
-func FindByPartnerActive(status bool)  (partners_domains.Partners , *errors.RestErr) {
+func FindByPartnerActive(status bool)  (partners_domains.Partners , *rest_errors_package.RestErr) {
 	return partners_domains.FindByPartnerActive(status)
 }

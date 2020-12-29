@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gpankaj/common-go-oauth/oauth"
+	"github.com/gpankaj/go-utils/rest_errors_package"
 	"github.com/gpankaj/storage_partners_api/domains/partners_domains"
 	"github.com/gpankaj/storage_partners_api/services"
-	"github.com/gpankaj/storage_partners_api/utils/errors"
 	"log"
 	"net/http"
 	"strconv"
@@ -16,21 +16,21 @@ func TestServiceInterface() {
 
 }
 
-func getPartnerId(partnerIdParams string) (int64, *errors.RestErr) {
+func getPartnerId(partnerIdParams string) (int64, *rest_errors_package.RestErr) {
 	partner_id, partnerIdError := strconv.ParseInt(partnerIdParams,10,64)
 	if partnerIdError!= nil {
-		return 0, errors.NewBadRequestError(fmt.Sprintf("Can not parse input text err: %s", partnerIdError.Error()))
+		return 0, rest_errors_package.NewBadRequestError(fmt.Sprintf("Can not parse input text err: %s", partnerIdError.Error()))
 
 	}
 	return partner_id, nil
 }
 
-func getPartnerStatus(partnerActiveParams string) (bool, *errors.RestErr) {
+func getPartnerStatus(partnerActiveParams string) (bool, *rest_errors_package.RestErr) {
 	fmt.Println("Inside getPartnerStatus ",partnerActiveParams)
 	status, statusError := strconv.ParseBool(partnerActiveParams)
 	if statusError!= nil {
 		//True is the default status.
-		return true, errors.NewBadRequestError(fmt.Sprintf("Can not parse input text err: %s", statusError.Error()))
+		return true, rest_errors_package.NewBadRequestError(fmt.Sprintf("Can not parse input text err: %s", statusError.Error()))
 
 	}
 	return status, nil
@@ -58,7 +58,7 @@ func CreatePartner(c *gin.Context) {
 	if err:= c.ShouldBindJSON(&partner_domain); err!= nil {
 		//TODO: Handle unmarshal error + request data handling error together
 
-		restError := errors.NewBadRequestError(err.Error())
+		restError := rest_errors_package.NewBadRequestError(err.Error())
 		c.JSON(restError.Code, restError)
 		return
 	}
@@ -93,7 +93,7 @@ func UpdatePartner(c *gin.Context) {
 	if err:= c.ShouldBindJSON(&partner_domain); err!= nil {
 		//TODO: Handle unmarshal error + request data handling error together
 
-		restError := errors.NewBadRequestError(err.Error())
+		restError := rest_errors_package.NewBadRequestError(err.Error())
 		c.JSON(restError.Code, restError)
 		return
 	}
@@ -185,7 +185,7 @@ func Login(c *gin.Context) {
 	if err:= c.ShouldBindJSON(&request); err!= nil {
 		//TODO: Handle unmarshal error + request data handling error together
 
-		restError := errors.NewBadRequestError(err.Error())
+		restError := rest_errors_package.NewBadRequestError(err.Error())
 		c.JSON(restError.Code, restError)
 		return
 	}
