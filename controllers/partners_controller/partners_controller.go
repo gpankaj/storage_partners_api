@@ -3,6 +3,7 @@ package partners_controller
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/gpankaj/common-go-oauth/oauth"
 	"github.com/gpankaj/storage_partners_api/domains/partners_domains"
 	"github.com/gpankaj/storage_partners_api/services"
 	"github.com/gpankaj/storage_partners_api/utils/errors"
@@ -115,6 +116,12 @@ func UpdatePartner(c *gin.Context) {
 	c.JSON(http.StatusCreated, result.Marshall(c.GetHeader("X-Public") == "true"))
 }
 func GetPartner(c *gin.Context) {
+
+	if err:=oauth.AuthenticateRequest(c.Request);err!= nil {
+		c.JSON(err.Code,err)
+		return
+	}
+
 	partner_id, idError:=getPartnerId(c.Param("partner_id"))
 	if idError!=nil{
 		c.JSON(idError.Code,idError)
@@ -125,9 +132,15 @@ func GetPartner(c *gin.Context) {
 		c.JSON(get_error.Code,get_error)
 		return
 	}
-	c.JSON(http.StatusCreated, result.Marshall(c.GetHeader("X-Public") == "true"))
-	//c.JSON(http.StatusOK,result)
 
+	if oauth.GetCallerId(c.Request) == result.Id {
+		c.JSON(http.StatusOK, result.Marshall(false))
+		return
+	}
+	//c.JSON(http.StatusCreated, result.Marshall(c.GetHeader("X-Public") == "true"))
+	fmt.Println(oauth.IsPublic(c.Request))
+	c.JSON(http.StatusOK, result.Marshall(oauth.IsPublic(c.Request)))
+	//c.JSON(http.StatusOK,result)
 	//c.String(http.StatusNotImplemented, "Implement Me!")
 }
 
