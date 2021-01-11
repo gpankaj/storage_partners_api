@@ -1,8 +1,8 @@
 package partners_domains
 
 import (
+	"github.com/gpankaj/go-utils/rest_errors_package"
 	"github.com/gpankaj/storage_partners_api/utils/date_utils"
-	"github.com/gpankaj/storage_partners_api/utils/errors"
 	"strings"
 )
 
@@ -30,7 +30,7 @@ func NewPartner() *Partner {
 		Listing_active: true, Email_id: "",Date_created : date_utils.GetNowDB(), Verified : false, Password: ""}
 }
 
-func (partner *Partner) Validate(isPatch bool) (*errors.RestErr){
+func (partner *Partner) Validate(isPatch bool) (*rest_errors_package.RestErr){
 
 	partner.Storage_partner_name = strings.TrimSpace(partner.Storage_partner_name)
 	partner.Storage_partner_company_name = strings.TrimSpace(partner.Storage_partner_company_name)
@@ -43,16 +43,16 @@ func (partner *Partner) Validate(isPatch bool) (*errors.RestErr){
 
 	if (!isPatch) {
 		if partner.Email_id == "" {
-			return errors.NewBadRequestError("Email id can not be empty")
+			return rest_errors_package.NewBadRequestError("Email id can not be empty")
 		}
 		if partner.Storage_partner_company_name == "" {
-			return errors.NewBadRequestError("Partner Company Name can not be empty.")
+			return rest_errors_package.NewBadRequestError("Partner Company Name can not be empty.")
 		}
 
 		if partner.Password == "" {
 			//TEMP
 			//partner.Password = "xx"
-			return errors.NewBadRequestError("Password can not be empty.")
+			return rest_errors_package.NewBadRequestError("Password can not be empty.")
 		}
 	}
 	return nil

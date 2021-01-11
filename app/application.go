@@ -1,8 +1,8 @@
 package app
 
 import (
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/gpankaj/storage_partners_api/logger"
 )
 
 var (
@@ -15,8 +15,7 @@ type frameworkInterface interface {
 }
 
 func StartApplication() {
+	router.Use(cors.Default())
 	mapUrls()
-
-	logger.Info("About to start application")
 	router.Run(":8080")
 }

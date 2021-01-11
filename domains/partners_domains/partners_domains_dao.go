@@ -2,9 +2,9 @@ package partners_domains
 
 import (
 	"fmt"
+	"github.com/gpankaj/go-utils/rest_errors_package"
 	"github.com/gpankaj/storage_partners_api/datasources/mysql/partners_db"
 	"github.com/gpankaj/storage_partners_api/logger"
-	"github.com/gpankaj/storage_partners_api/utils/errors"
 	"github.com/gpankaj/storage_partners_api/utils/mysql_utils"
 	"log"
 )
@@ -37,7 +37,7 @@ const  (
 
 )
 
-func (partner *Partner)  Get() (*errors.RestErr){
+func (partner *Partner)  Get() (*rest_errors_package.RestErr){
 
 	if err:=partners_db.Client.Ping(); err!= nil {
 		panic(err)
@@ -47,7 +47,7 @@ func (partner *Partner)  Get() (*errors.RestErr){
 
 	stmt,err:=partners_db.Client.Prepare(queryGetPartner)
 	if err!=nil {
-		return errors.NewInternalServerError(fmt.Sprintf("Error while preparing stmt in GET ",err.Error()))
+		return rest_errors_package.NewInternalServerError(fmt.Sprintf("Error while preparing stmt in GET ",err.Error()), err)
 	}
 	defer stmt.Close()
 
@@ -62,12 +62,12 @@ func (partner *Partner)  Get() (*errors.RestErr){
 	return nil
 }
 
-func (partner *Partner) Save() *errors.RestErr{
+func (partner *Partner) Save() *rest_errors_package.RestErr{
 	fmt.Println(partner)
 	stmt ,err := partners_db.Client.Prepare(queryInsertPartner)
 
 	if err!=nil {
-		return errors.NewInternalServerError(fmt.Sprintf("Error while preparing stmt ",err.Error()))
+		return rest_errors_package.NewInternalServerError(fmt.Sprintf("Error while preparing stmt ",err.Error()),err)
 	}
 	//Storage_partner_company_name
 	defer stmt.Close()
@@ -84,7 +84,8 @@ func (partner *Partner) Save() *errors.RestErr{
 	partner_id, err := result.LastInsertId()
 
 	if err!= nil {
-		return errors.NewInternalServerError(fmt.Sprintf("Error while trying to get LastInsertId %s ", err.Error()))
+		return rest_errors_package.NewInternalServerError(fmt.Sprintf("Error while trying to get LastInsertId %s ", err.Error()),
+			err)
 	}
 	partner.Id = partner_id
 
@@ -92,12 +93,12 @@ func (partner *Partner) Save() *errors.RestErr{
 
 }
 
-func (partner *Partner)Update() *errors.RestErr{
+func (partner *Partner)Update() *rest_errors_package.RestErr{
 	stmt ,err := partners_db.Client.Prepare(queryUpdatePartner)
 
 	if err!=nil {
 		logger.Error("Error while preparing statement inside Update function called by used", err)
-		return errors.NewInternalServerError(fmt.Sprintf("Error while preparing stmt ",err.Error()))
+		return rest_errors_package.NewInternalServerError(fmt.Sprintf("Error while preparing stmt ",err.Error()), err)
 	}
 	//Storage_partner_company_name
 	defer stmt.Close()
@@ -112,11 +113,12 @@ func (partner *Partner)Update() *errors.RestErr{
 	return nil
 }
 
-func (partner *Partner)Delete() *errors.RestErr{
+func (partner *Partner)Delete() *rest_errors_package.RestErr{
 	stmt ,err := partners_db.Client.Prepare(queryDeletePartner)
 
 	if err!=nil {
-		return errors.NewInternalServerError(fmt.Sprintf("Error while preparing stmt in DELETE ",err.Error()))
+		return rest_errors_package.NewInternalServerError(fmt.Sprintf("Error while preparing stmt in DELETE ",err.Error()),
+			err)
 	}
 	//Storage_partner_company_name
 	defer stmt.Close()
@@ -130,11 +132,12 @@ func (partner *Partner)Delete() *errors.RestErr{
 }
 //
 
-func FindByPartnerActive(status bool) ([]Partner, *errors.RestErr){
+func FindByPartnerActive(status bool) ([]Partner, *rest_errors_package.RestErr){
 	stmt ,err := partners_db.Client.Prepare(queryFindPartnerIfActive)
 
 	if err!=nil {
-		return nil,errors.NewInternalServerError(fmt.Sprintf("Error while preparing stmt in FindByPartnerActive ",err.Error()))
+		return nil,rest_errors_package.NewInternalServerError(fmt.Sprintf("Error while preparing stmt in FindByPartnerActive ",err.Error()),
+			err)
 	}
 	//Storage_partner_company_name
 	defer stmt.Close()
@@ -161,13 +164,13 @@ func FindByPartnerActive(status bool) ([]Partner, *errors.RestErr){
 	}
 
 	if len(results) == 0 {
-		return nil, errors.NewNotFoundError(fmt.Sprintf("No matching user found for given status %t", status))
+		return nil, rest_errors_package.NewNotFoundError(fmt.Sprintf("No matching user found for given status %t", status))
 	}
 	return results, nil
 }
 
 
-func (partner *Partner) FindByEmailAndPassword() (*errors.RestErr){
+func (partner *Partner) FindByEmailAndPassword() (*rest_errors_package.RestErr){
 
 	if err:=partners_db.Client.Ping(); err!= nil {
 		panic(err)
@@ -177,7 +180,7 @@ func (partner *Partner) FindByEmailAndPassword() (*errors.RestErr){
 
 	stmt,err:=partners_db.Client.Prepare(queryFindEmailAndPassword)
 	if err!=nil {
-		return errors.NewInternalServerError(fmt.Sprintf("Error while preparing stmt in FindByEmailAndPassword ",err.Error()))
+		return rest_errors_package.NewInternalServerError(fmt.Sprintf("Error while preparing stmt in FindByEmailAndPassword ",err.Error()),err)
 	}
 	defer stmt.Close()
 
