@@ -28,7 +28,14 @@ const  (
 
 	queryFindPartnerIfActive = "SELECT Id, Storage_partner_name,Storage_partner_company_name,Storage_partner_company_gst, " +
 		"Provides_goods_transport_service,Provides_goods_packaging_service," +
-		"Provides_goods_insurance_service,Listing_active,Phone_numbers,Email_id,Date_created,Verified FROM partners_table WHERE Listing_active=? ;"
+		"Provides_goods_insurance_service,Listing_active,Phone_numbers,Email_id,Date_created,Verified FROM partners_table WHERE Listing_active=?;"
+
+	queryFindPartnerByOwner = "SELECT Id, Storage_partner_name,Storage_partner_company_name,Storage_partner_company_gst, " +
+		"Provides_goods_transport_service,Provides_goods_packaging_service," +
+		"Provides_goods_insurance_service,Listing_active,Phone_numbers,Email_id,Date_created,Verified FROM partners_table WHERE Id=?;"
+
+
+
 
 	queryFindEmailAndPassword="SELECT Id, Storage_partner_name,Storage_partner_company_name,Storage_partner_company_gst," +
 		"Provides_goods_transport_service,Provides_goods_packaging_service," +
@@ -67,11 +74,16 @@ func (partner *Partner) Save() *rest_errors_package.RestErr{
 	stmt ,err := partners_db.Client.Prepare(queryInsertPartner)
 
 	if err!=nil {
+		log.Println("Failed in DAO while preparing stmt " , queryInsertPartner)
+
 		return rest_errors_package.NewInternalServerError(fmt.Sprintf("Error while preparing stmt ",err.Error()),err)
 	}
 	//Storage_partner_company_name
 	defer stmt.Close()
 	//partner.Date_created = date_utils.GetNowString()
+
+	log.Println("Partner in save of DAO is ", partner);
+
 	result, saveError := stmt.Exec(
 		partner.Storage_partner_name, partner.Storage_partner_company_name, partner.Storage_partner_company_gst,
 		partner.Provides_goods_transport_service, partner.Provides_goods_packaging_service, partner.Provides_goods_insurance_service,
@@ -102,10 +114,17 @@ func (partner *Partner)Update() *rest_errors_package.RestErr{
 	}
 	//Storage_partner_company_name
 	defer stmt.Close()
+	log.Println("Printing inside Update ", partner)
 	//partner.Date_created = date_utils.GetNowString()
-	_, updateError := stmt.Exec(partner.Storage_partner_name, partner.Storage_partner_company_name, partner.Storage_partner_company_gst,
+	result, updateError := stmt.Exec(partner.Storage_partner_name, partner.Storage_partner_company_name, partner.Storage_partner_company_gst,
 		partner.Provides_goods_transport_service, partner.Provides_goods_packaging_service, partner.Provides_goods_insurance_service,
 		partner.Listing_active, partner.Phone_numbers, partner.Email_id, partner.Id)
+	rows_affected, error := result.RowsAffected()
+	if error!= nil {
+		log.Println(error)
+	}
+
+	log.Println("Update result ", rows_affected)
 
 	if updateError!= nil {
 		return mysql_utils.ParseError(updateError)
@@ -129,6 +148,40 @@ func (partner *Partner)Delete() *rest_errors_package.RestErr{
 		return mysql_utils.ParseError(deleteError)
 	}
 	return nil
+}
+
+func (partner *Partner) FindPartnerByOwner(owner_id int64) (*rest_errors_package.RestErr) {
+
+	log.Println("Running ", queryFindPartnerByOwner)
+	stmt ,err := partners_db.Client.Prepare(queryFindPartnerByOwner)
+
+	if err!=nil {
+		log.Println("Got some error ", err.Error())
+
+		return rest_errors_package.NewInternalServerError(fmt.Sprintf("Error while preparing stmt in queryFindPartnerByOwner ",err.Error()),
+			err)
+	}
+	//Storage_partner_company_name
+	defer stmt.Close()
+	//partner.Date_created = date_utils.GetNowString()
+	result, findPartnerByOwnerError := stmt.Query(owner_id)
+	if findPartnerByOwnerError!= nil {
+		log.Println("Failed to find partners findPartnerByOwnerError ", findPartnerByOwnerError.Error())
+		return mysql_utils.ParseError(findPartnerByOwnerError)
+	}
+
+
+	if getErr:= result.Scan(&partner.Id,&partner.Storage_partner_name, &partner.Storage_partner_company_name,
+		&partner.Storage_partner_company_gst,&partner.Provides_goods_transport_service,&partner.Provides_goods_packaging_service,
+		&partner.Provides_goods_insurance_service,&partner.Listing_active,&partner.Phone_numbers,&partner.Email_id,&partner.Date_created,
+		&partner.Verified); getErr!=nil{
+
+		log.Println("Error during scan of result ", getErr.Error())
+
+		return mysql_utils.ParseError(getErr)
+	}
+	return nil
+
 }
 //
 

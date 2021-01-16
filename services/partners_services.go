@@ -20,6 +20,8 @@ type partnerServiceInterface interface {
 	Update_Partner_Service(bool,partners_domains.Partner) (*partners_domains.Partner, *rest_errors_package.RestErr)
 	Delete_Partner_Service(int64) *rest_errors_package.RestErr
 	LoginUser(partners_domains.PartnerLoginRequest) (*partners_domains.Partner,*rest_errors_package.RestErr)
+	FindPartnerByOwner(owner_id int64)  (*partners_domains.Partner , *rest_errors_package.RestErr)
+
 }
 
 func (s *partnerService) Create_Partner_Service(partner partners_domains.Partner) (*partners_domains.Partner, *rest_errors_package.RestErr) {
@@ -73,14 +75,22 @@ func (s *partnerService) Update_Partner_Service(isPartial bool,partner partners_
 			return nil, err
 		}
 
+		log.Println("partner from user is ", partner)
+
 
 		if partner.Storage_partner_name != "" {
 			partner_from_db.Storage_partner_name = partner.Storage_partner_name
 		}
 
+
 		if partner.Storage_partner_company_name != "" {
 			partner_from_db.Storage_partner_company_name = partner.Storage_partner_company_name
 		}
+
+		if partner.Storage_partner_company_gst != "" {
+			partner_from_db.Storage_partner_company_gst = partner.Storage_partner_company_gst
+		}
+
 
 		if partner.Provides_goods_transport_service {
 			partner_from_db.Provides_goods_transport_service = true
@@ -179,4 +189,20 @@ func (s *partnerService) LoginUser(request partners_domains.PartnerLoginRequest)
 
 func FindByPartnerActive(status bool)  (partners_domains.Partners , *rest_errors_package.RestErr) {
 	return partners_domains.FindByPartnerActive(status)
+}
+//FindPartnerByOwner
+
+func (s *partnerService) FindPartnerByOwner(owner_id int64)  (*partners_domains.Partner , *rest_errors_package.RestErr) {
+
+	if owner_id <0 {
+		return nil, rest_errors_package.NewBadRequestError(fmt.Sprintf("Invalid owner_id id %d", owner_id))
+	}
+
+	partner_model := &partners_domains.Partner{Id: owner_id}
+
+	if err:= partner_model.FindPartnerByOwner(owner_id); err!= nil {
+		return nil, err
+	}
+	return partner_model, nil
+
 }

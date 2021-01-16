@@ -1,6 +1,7 @@
 package partners_controller
 
 import (
+	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gpankaj/common-go-oauth/oauth"
@@ -24,6 +25,17 @@ func getPartnerId(partnerIdParams string) (int64, *rest_errors_package.RestErr) 
 	}
 	return partner_id, nil
 }
+
+
+func getOwnerId(ownerIdParams string) (int64, *rest_errors_package.RestErr) {
+	owner_id, ownerIdError := strconv.ParseInt(ownerIdParams,10,64)
+	if ownerIdError!= nil {
+		return 0, rest_errors_package.NewBadRequestError(fmt.Sprintf("Can not parse input text err: %s", ownerIdError.Error()))
+
+	}
+	return owner_id, nil
+}
+
 
 func getPartnerStatus(partnerActiveParams string) (bool, *rest_errors_package.RestErr) {
 	fmt.Println("Inside getPartnerStatus ",partnerActiveParams)
@@ -66,6 +78,7 @@ func CreatePartner(c *gin.Context) {
 	result, save_error := services.PartnerService.Create_Partner_Service(*partner_domain)
 	if save_error != nil {
 		//TODO: Handle user creation Error
+		log.Println("Failed to save new partner in controller ", save_error)
 		c.JSON(save_error.Code, save_error)
 		return
 	}
@@ -73,19 +86,36 @@ func CreatePartner(c *gin.Context) {
 	//c.String(http.StatusNotImplemented, "Implement Me!")
 	//c.JSON(http.StatusCreated, result)
 	c.JSON(http.StatusCreated, result.Marshall(c.GetHeader("X-Public") == "true"))
-
-
-
 }
 
 func UpdatePartner(c *gin.Context) {
 	//create a partner domain.
 
-	partner_id, idError:=getPartnerId(c.Param("partner_id"))
+	if err:=oauth.AuthenticateRequest(c.Request);err!= nil {
+		c.JSON(err.Code,err)
+		return
+	}
+
+	log.Println("Caller Id", oauth.GetCallerId(c.Request))
+
+	log.Println("Client Id", oauth.GetClientId(c.Request))
+
+	owner_id, idError:=getPartnerId(c.Param("partner_id"))
 	if idError!=nil{
 		c.JSON(idError.Code,idError)
 		return
 	}
+
+	if oauth.GetClientId(c.Request) !=owner_id {
+		log.Println("Owner id ", owner_id)
+		log.Println("Client id ", oauth.GetClientId(c.Request));
+
+		log.Println("Given token does not belong to the owner")
+		c.JSON(http.StatusBadRequest, errors.New("Client Id does not match with given token id"))
+		return
+	}
+	log.Println("===You are the owner of this partner..==")
+
 
 	partner_domain := partners_domains.NewPartner()
 
@@ -97,12 +127,10 @@ func UpdatePartner(c *gin.Context) {
 		c.JSON(restError.Code, restError)
 		return
 	}
-	partner_domain.Id = partner_id
+	partner_domain.Id = owner_id
 
-	log.Println(partner_domain)
 
 	isPartial := c.Request.Method == http.MethodPatch
-
 
 	result, update_error := services.PartnerService.Update_Partner_Service(isPartial,*partner_domain)
 	if update_error != nil {
@@ -115,12 +143,64 @@ func UpdatePartner(c *gin.Context) {
 	//c.JSON(http.StatusOK, result)
 	c.JSON(http.StatusCreated, result.Marshall(c.GetHeader("X-Public") == "true"))
 }
+
+//
+
+
+func GetSinglePartner(c *gin.Context) {
+
+	if err:=oauth.AuthenticateRequest(c.Request);err!= nil {
+		c.JSON(err.Code,err)
+		return
+	}
+
+	log.Println("Caller Id", oauth.GetCallerId(c.Request))
+
+	log.Println("Client Id", oauth.GetClientId(c.Request))
+
+	owner_id, idError:=getPartnerId(c.Param("partner_id"))
+	if idError!=nil{
+		c.JSON(idError.Code,idError)
+		return
+	}
+
+	if oauth.GetClientId(c.Request) !=owner_id {
+		log.Println("Owner id ", owner_id)
+		log.Println("Client id ", oauth.GetClientId(c.Request));
+
+		log.Println("Given token does not belong to the owner")
+		c.JSON(http.StatusBadRequest, errors.New("Client Id does not match with given token id"))
+		return
+	}
+	log.Println("===You are the owner of this partner..==")
+	result, get_error := services.PartnerService.Get_Partner_Service(owner_id)
+	if get_error!= nil {
+		c.JSON(get_error.Code,get_error)
+		return
+	}
+
+	if oauth.GetCallerId(c.Request) == result.Id {
+		c.JSON(http.StatusOK, result.Marshall(false))
+		return
+	}
+	//c.JSON(http.StatusCreated, result.Marshall(c.GetHeader("X-Public") == "true"))
+	fmt.Println(oauth.IsPublic(c.Request))
+	c.JSON(http.StatusOK, result.Marshall(oauth.IsPublic(c.Request)))
+	//c.JSON(http.StatusOK,result)
+	//c.String(http.StatusNotImplemented, "Implement Me!")
+}
+
+
 func GetPartner(c *gin.Context) {
 
 	if err:=oauth.AuthenticateRequest(c.Request);err!= nil {
 		c.JSON(err.Code,err)
 		return
 	}
+
+	log.Println("Caller Id", oauth.GetCallerId(c.Request))
+
+	log.Println("Client Id", oauth.GetClientId(c.Request))
 
 	partner_id, idError:=getPartnerId(c.Param("partner_id"))
 	if idError!=nil{
@@ -159,6 +239,39 @@ func DeletePartner(c *gin.Context) {
 	c.JSON(http.StatusOK, map[string]string{"status": fmt.Sprintf("deleted partner with id %d", partner_id)})
 }
 
+func FindPartnerByOwner(c *gin.Context) {
+	if err:=oauth.AuthenticateRequest(c.Request);err!= nil {
+		c.JSON(err.Code,err)
+		return
+	}
+	owner_id, idError:=getOwnerId(c.Param("owner_id"))
+	if idError!=nil{
+		c.JSON(idError.Code,idError)
+		return
+	}
+
+	if oauth.GetClientId(c.Request) !=owner_id {
+		log.Println("Owner id ", owner_id)
+		log.Println("Client id ", oauth.GetClientId(c.Request));
+
+		log.Println("Given token does not belong to the owner")
+		c.JSON(http.StatusBadRequest, errors.New("Client Id does not match with given token id"))
+		return
+	}
+
+
+	result, get_error := services.PartnerService.FindPartnerByOwner(owner_id);
+	if get_error!=nil{
+		c.JSON(get_error.Code, get_error)
+		return
+	}
+	log.Println("Inside controller checing if this was a public request ")
+	log.Println(oauth.IsPublic(c.Request))
+	c.JSON(http.StatusOK, result.Marshall(oauth.IsPublic(c.Request)))
+
+	return
+}
+
 func FindByPartnerActive(c *gin.Context) {
 	//
 	//status, statusError:=getPartnerStatus(c.Param("status"))
@@ -182,6 +295,9 @@ func FindByPartnerActive(c *gin.Context) {
 func Login(c *gin.Context) {
 	var request partners_domains.PartnerLoginRequest
 
+	log.Println("Request to login with Email", request.Email_id);
+	log.Println("Request to login with Password ", request.Password);
+
 	if err:= c.ShouldBindJSON(&request); err!= nil {
 		//TODO: Handle unmarshal error + request data handling error together
 
@@ -195,7 +311,7 @@ func Login(c *gin.Context) {
 		c.JSON(err.Code, err)
 		return
 	}
-		c.JSON(http.StatusOK, partner.Marshall(c.GetHeader("X-Public") == "true"))
+	c.JSON(http.StatusOK, partner.Marshall(c.GetHeader("X-Public") == "true"))
 
 	return
 }
