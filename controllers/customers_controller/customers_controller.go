@@ -92,23 +92,30 @@ func CreateCustomer(c *gin.Context) {
 func Login(c *gin.Context) {
 	var request customers_domains.CustomerLoginRequest
 
-	log.Println("Request to login with Email", request.Customer_email_id);
-	log.Println("Request to login with Password ", request.Customer_password);
 
 	if err:= c.ShouldBindJSON(&request); err!= nil {
 		//TODO: Handle unmarshal error + request data handling error together
-
 		restError := rest_errors_package.NewBadRequestError(err.Error())
 		c.JSON(restError.Code, restError)
 		return
 	}
-	partner, err := services.CustomerService.LoginUser(request)
+	customer, err := services.CustomerService.LoginUser(request)
+
+	log.Println("Request to login with Email", request.Customer_email_id);
+	log.Println("Request to login with Password ", request.Customer_password);
+
+	if request.Customer_email_id == ""||request.Customer_password == "" {
+		restError := rest_errors_package.NewBadRequestError("Wrong Args")
+		c.JSON(restError.Code, restError)
+		return
+	}
 
 	if err!=nil {
 		c.JSON(err.Code, err)
 		return
 	}
-	c.JSON(http.StatusOK, partner.Marshall(c.GetHeader("X-Public") == "true"))
+	c.JSON(http.StatusOK, customer)
+	//c.JSON(http.StatusOK, customer.Marshall(c.GetHeader("X-Public") == "true"))
 
 	return
 }

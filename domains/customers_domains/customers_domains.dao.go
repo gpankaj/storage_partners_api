@@ -124,6 +124,7 @@ func (customer *Customer) FindByEmailAndPassword() (*rest_errors_package.RestErr
 	result := stmt.QueryRow(customer.Customer_email_id, customer.Customer_password)
 	log.Println("result ", result)
 
+
 	if getErr:= result.Scan(&customer.Customer_id,&customer.Customer_name, &customer.Customer_phone_number,
 		&customer.Customer_address,&customer.Customer_city,&customer.Customer_state,
 		&customer.Customer_phone_verified,&customer.Customer_comments,&customer.Customer_email_id,&customer.Customer_active,
